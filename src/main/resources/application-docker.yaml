@@ -1,0 +1,9 @@
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+
+AUTH_SERVICE_URL: http://auth-service:8082
+USER_SERVICE_URL: http://user-service:8081
+ORDER_SERVICE_URL: http://order-service:8083
