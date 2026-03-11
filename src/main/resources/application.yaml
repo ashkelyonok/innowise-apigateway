@@ -1,0 +1,121 @@
+server:
+  port: ${SERVER_PORT:8084}
+
+spring:
+  application:
+    name: ApiGateway
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  config:
+    import: optional:file:.env[.properties]
+  cloud:
+    gateway:
+      routes:
+        - id: auth-service-swagger
+          uri: ${AUTH_SERVICE_URL}
+          predicates:
+            - Path=/api/v1/auth/v3/api-docs
+          filters:
+            - RewritePath=/api/v1/auth/v3/api-docs, /v3/api-docs
+
+        - id: user-service-swagger
+          uri: ${USER_SERVICE_URL}
+          predicates:
+            - Path=/api/v1/users/v3/api-docs
+          filters:
+            - RewritePath=/api/v1/users/v3/api-docs, /v3/api-docs
+
+        - id: order-service-swagger
+          uri: ${ORDER_SERVICE_URL}
+          predicates:
+            - Path=/api/v1/orders/v3/api-docs
+          filters:
+            - RewritePath=/api/v1/orders/v3/api-docs, /v3/api-docs
+
+        - id: auth-service
+          uri: ${AUTH_SERVICE_URL}
+          predicates:
+            - Path=/api/v1/auth/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: auth-service
+                fallbackUri: forward:/fallback
+
+        - id: user-service
+          uri: ${USER_SERVICE_URL}
+          predicates:
+            - Path=/api/v1/users/**, /api/v1/cards/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: user-service
+                fallbackUri: forward:/fallback
+
+        - id: order-service
+          uri: ${ORDER_SERVICE_URL}
+          predicates:
+            - Path=/api/v1/orders/**, /api/v1/items/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: order-service
+                fallbackUri: forward:/fallback
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-type: TIME_BASED
+        sliding-window-size: 60
+        minimum-number-of-calls: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 5s
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+    instances:
+      user-service:
+        baseConfig: default
+      auth-service:
+        baseConfig: default
+      order-service:
+        baseConfig: default
+
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 5s
+    instances:
+      auth-service:
+        baseConfig: default
+      user-service:
+        baseConfig: default
+      order-service:
+        baseConfig: default
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    urls:
+      - name: Api Gateway
+        url: /v3/api-docs
+      - name: Auth Service
+        url: /api/v1/auth/v3/api-docs
+      - name: User Service
+        url: /api/v1/users/v3/api-docs
+      - name: Order Service
+        url: /api/v1/orders/v3/api-docs
+    urls-primary-name: Api Gateway
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      probes:
+        enabled: true

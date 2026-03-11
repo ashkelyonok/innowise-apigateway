@@ -1,0 +1,8 @@
+spring:
+  config:
+    activate:
+      on-profile: local
+
+AUTH_SERVICE_URL: http://localhost:8082
+USER_SERVICE_URL: http://localhost:8081
+ORDER_SERVICE_URL: http://localhost:8083
