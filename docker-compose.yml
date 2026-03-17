@@ -168,6 +168,43 @@ services:
     networks:
       - global-network
 
+  payment-db:
+    image: mongo:7.0
+    container_name: payment-db
+    ports:
+      - "27017:27017"
+    env_file:
+      - ../Microservices/PaymentService/.env
+    volumes:
+      - payment_db_data:/data/db
+    networks:
+      - global-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  payment-service:
+    build:
+      context: ../Microservices/PaymentService
+      dockerfile: Dockerfile
+    container_name: payment-service
+    ports:
+      - "8085:8085"
+    env_file:
+      - ../Microservices/PaymentService/.env
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    depends_on:
+      payment-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - global-network
+
   api-gateway:
     build:
       context: .
@@ -182,10 +219,12 @@ services:
       AUTH_SERVICE_URL: http://auth-service:8082
       USER_SERVICE_URL: http://user-service:8081
       ORDER_SERVICE_URL: http://order-service:8083
+      PAYMENT_SERVICE_URL: http://payment-service:8085
     depends_on:
       - auth-service
       - user-service
       - order-service
+      - payment-service
     networks:
       - global-network
 
@@ -197,5 +236,6 @@ volumes:
   auth_db_data:
   user_db_data:
   order_db_data:
+  payment_db_data:
   redis_data:
   kafka_data:

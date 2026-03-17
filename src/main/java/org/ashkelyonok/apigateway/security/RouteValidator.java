@@ -16,9 +16,10 @@ public class RouteValidator {
             "/api/v1/auth/login",
             "/api/v1/auth/refresh",
             "/actuator/health",
-            "v3/api-docs",
-            "swagger-ui",
-            "webjars"
+            "/**/v3/api-docs/**",
+            "/**/swagger-ui/**",
+            "/**/swagger-ui.html",
+            "/**/webjars/**"
     );
 
     public boolean isSecured(ServerHttpRequest request) {
