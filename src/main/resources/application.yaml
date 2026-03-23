@@ -32,6 +32,13 @@ spring:
           filters:
             - RewritePath=/api/v1/orders/v3/api-docs, /v3/api-docs
 
+        - id: payment-service-swagger
+          uri: ${PAYMENT_SERVICE_URL}
+          predicates:
+            - Path=/api/v1/payments/v3/api-docs
+          filters:
+            - RewritePath=/api/v1/payments/v3/api-docs, /v3/api-docs
+
         - id: auth-service
           uri: ${AUTH_SERVICE_URL}
           predicates:
@@ -62,6 +69,16 @@ spring:
                 name: order-service
                 fallbackUri: forward:/fallback
 
+        - id: payment-service
+          uri: ${PAYMENT_SERVICE_URL}
+          predicates:
+            - Path=/api/v1/payments/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: payment-service
+                fallbackUri: forward:/fallback
+
 resilience4j:
   circuitbreaker:
     configs:
@@ -79,6 +96,8 @@ resilience4j:
         baseConfig: default
       order-service:
         baseConfig: default
+      payment-service:
+        baseConfig: default
 
   timelimiter:
     configs:
@@ -90,6 +109,8 @@ resilience4j:
       user-service:
         baseConfig: default
       order-service:
+        baseConfig: default
+      payment-service:
         baseConfig: default
 
 springdoc:
@@ -108,6 +129,8 @@ springdoc:
         url: /api/v1/users/v3/api-docs
       - name: Order Service
         url: /api/v1/orders/v3/api-docs
+      - name: Payment Service
+        url: /api/v1/payments/v3/api-docs
     urls-primary-name: Api Gateway
 
 management:
